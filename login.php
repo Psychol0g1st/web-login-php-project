@@ -1,4 +1,6 @@
 <?php
+require 'session.php';
+
 function decodeFile($fileName) {
     $file = file_get_contents($fileName);
     $shiftingNumsOriginal = [5,-14,31,-9,3];
@@ -19,7 +21,6 @@ function decodeFile($fileName) {
     }
     $decoded = substr_replace($decoded, '', -1);
     $decoded = explode(chr(10), $decoded);
-    //loop through the array and and explode each element into an array by asterisk (*) and assign first element to username key and second element to password key
     foreach ($decoded as $key => $value) {
         $decoded[$key] = explode('*', $value);
         $decoded[$key] = array('username' => $decoded[$key][0], 'password' => $decoded[$key][1]);
@@ -28,25 +29,29 @@ function decodeFile($fileName) {
 }
 
 
-
-//check if post method was requested
+$_SESSION['error'] = "";
 if (isset($_POST['submit'])) {
-    //check if username and password are empty
-    if (empty($_POST['username']) || empty($_POST['password'])) {
-        header("Location: index.php?error=emptyfields");
-        exit();
-    } else {
-        //check if username and password are valid
-        $username = $_POST['username'];
-        $password = $_POST['password'];
-        
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+    $decodedFile = decodeFile('./password.txt');
+    $userExists = false;
+    foreach ($decodedFile as $user) {
+        if ($user["username"] === $username) {
+            if($user["password"] === $password){
+                $_SESSION['logged_in'] = true;
+                $_SESSION['username'] = $username;
+            }
+            else{
+                $_SESSION['error'] = "Helytelen jelszó";
+            }
+            $userExists = true;
+            break;
+        }
+    }
+    if(!$userExists){
+        $_SESSION['error']= "Ilyen felhasználó nem létezik";
     }
 }
-//  else {
-//     header("Location: index.php");
-//     exit();
-// }
-
-$decodedFile = decodeFile('password.txt');
-var_dump($decodedFile);
+header("Location: index.php");
+exit();
 ?>
